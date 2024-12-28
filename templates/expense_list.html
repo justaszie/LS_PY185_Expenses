@@ -1,5 +1,49 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<header>
 <h1>List of Expenses</h1>
+</header>
+<section>
+<!-- TODO: Add Expemse / Analytics CTAs -->
+    <a class="cta" href="#">&nbsp;&plus; Add Expense</a>
+    <a class="cta" href="#">Analytics</a>
+</section>
+
+<section>
+{% if not expenses %}
+    <p>No expenses yet, feel free to add some</p>
+{% else %}
+    <table class="expense-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount (USD)</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in expenses %}
+                <tr class="row">
+                    <td>{{ expense.transaction_datetime }}</td>
+                    <td>{{ expense.amount_usd }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td>{{ expense.category_name }}</td>
+                    <td>
+                        <a class="cta" href="{{ '#' }}" >Edit</a>  <!-- TODO : add Edit route link -->
+                        <form class="cta-form" method="POST" action="{{ '#' }}"> <!-- TODO : add Delete route link -->
+                            <input type="hidden" name="expsense_id" value="{{ expense.id }}">
+                            <button class="cta" type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+</section>
+
 {% endblock %}
