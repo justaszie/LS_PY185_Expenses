@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block content %}
+    <header>
+        <h1>Add New Expense </h1>
+    </header>
+    <main>
+        <form method="POST" action="{{ url_for('create_expense') }}">
+            <div class="expense-input">
+                <label for="transaction_date">Transaction Date & Time:</label>
+                <input id="transaction_date" type="date" name="transaction_date"
+                    value="{{ request.form.get('transaction_date', current_date)}}"
+                    max="{{ current_date }}">
+
+                <input id="transaction_time" type="time" name="transaction_time"
+                    value="{{ request.form.get('transaction_time', '') }}">
+            </div>
+            <div class="expense-input">
+                <label for="amount">Amount:</label>
+                &dollar;
+                <input id="amount" type="number" name="amount_usd" placeholder="0.01" step="0.01"
+                        value="{{ request.form.get('amount_usd', '') }}">
+            </div>
+            <div class="expense-input">
+                <label for="description">Description:</label>
+                <input id="description" type="text" name="description" placeholder="Starbucks Coffee"
+                        value="{{ request.form.get('description', '') }}">
+            </div>
+            <div class="expense-input">
+                <label for="category">Category:</label>
+                <select id="category" name="category_id">
+                    <option value="" {% if request.form.get('category_id') is none %} selected {% endif %}></option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}"
+                                {% if request.form.get('category_id') == category.id | string %} selected {% endif %}>
+                                {{ category.name | title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button>Submit</button>
+        </form>
+        <a href="{{ url_for('index') }}"> Back to List</a>
+    </main>
+{% endblock %}

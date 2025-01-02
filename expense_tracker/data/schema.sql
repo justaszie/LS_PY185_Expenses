@@ -6,10 +6,10 @@ CREATE TABLE users(
 
 CREATE TABLE categories(
     id SERIAL PRIMARY KEY,
-    category_name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
 );
 
-INSERT INTO categories(category_name)
+INSERT INTO categories(name)
 VALUES ('Health'),
         ('Groceries'),
         ('Food & Drink'),
@@ -22,7 +22,7 @@ VALUES ('Health'),
 CREATE TABLE expenses(
     id SERIAL PRIMARY KEY,
     transaction_datetime timestamp NOT NULL,
-    amount_usd NUMERIC NOT NULL,
+    amount_cents_usd INT NOT NULL,
     description TEXT NOT NULL,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     category_id INT REFERENCES categories(id) ON DELETE RESTRICT

@@ -17,11 +17,16 @@ th, td {
     border: 1px solid;
     border-radius:5px;
     cursor:default;
+    display:inline-block
 }
 .cta-form{
-    display:inline;
+    display:inline-block;
 }
 
 section{
     margin-top:10px;
+}
+
+.expense-input{
+    padding-bottom: 10px;
 }
