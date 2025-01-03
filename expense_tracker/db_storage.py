@@ -95,7 +95,7 @@ class ExpensesDatabaseStorage:
     def create_new_expense(self, cursor, user_id,
                            transaction_date, transaction_time,
                            amount_usd, description, category_id):
-        amount_cents = float(amount_usd) * 100
+        amount_cents = int(float(amount_usd) * 100)
         if transaction_time:
             transaction_datetime = datetime.strptime(f'{transaction_date}T{transaction_time}','%Y-%m-%dT%H:%M')
         else:
@@ -121,5 +121,44 @@ class ExpensesDatabaseStorage:
         return result[0] if result else None
 
     @db_transaction()
-    def update_expense(self, cursor, user_id, expense_id, **expense_data):
-        pass
+    def update_expense(self, cursor, user_id, expense_id,
+                       transaction_date, transaction_time,
+                        amount_usd, description, category_id):
+        amount_cents = int(float(amount_usd) * 100)
+        if transaction_time:
+            transaction_datetime = datetime.strptime(f'{transaction_date}T{transaction_time}','%Y-%m-%dT%H:%M')
+        else:
+            transaction_datetime = datetime.strptime(f'{transaction_date}','%Y-%m-%d')
+        category_id = int(category_id) if category_id else None
+        description = description if description else None
+        query = (
+            """
+            UPDATE expenses
+            SET transaction_datetime = %s,
+                amount_cents_usd = %s,
+                description = %s,
+                category_id = %s
+            WHERE user_id = %s
+                AND id = %s
+            """
+        )
+        params = (
+            transaction_datetime, amount_cents,
+            description, category_id,
+            user_id, expense_id,
+        )
+        cursor.execute(query, params)
+        return
+
+    @db_transaction()
+    def delete_expense_by_id(self, cursor, user_id, expense_id):
+        query = (
+            """
+            DELETE FROM expenses
+            WHERE user_id = %s
+                AND id = %s
+            """
+        )
+        params = (user_id, expense_id, )
+        cursor.execute(query, params)
+        return

@@ -17,6 +17,7 @@ from expense_tracker import utils
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
+app.jinja_env.filters['sort_expenses'] = utils.sort_by_transaction_date
 
 def requires_signin(func):
     @wraps(func)
@@ -114,18 +115,22 @@ def edit_expense(user_id, expense_id):
 
         categories = g.storage.get_categories()
         expense_data['id'] = expense_id
-        print(expense_data)
         return render_template('edit_expense.html', expense=expense_data, categories=categories)
 
     else:
         try:
             g.storage.update_expense(user_id, expense_id, **expense_data)
-            flash('Expense created successfully', 'success')
+            flash('Expense updated successfully', 'success')
             return redirect(url_for('expense_list'))
         except ValueError:
             abort(500)
 
-
+@app.route('/expenses/<int:expense_id>/delete', methods=['POST'])
+@requires_signin
+def delete_expense(user_id, expense_id):
+    g.storage.delete_expense_by_id(user_id, expense_id)
+    flash('Expense deleted successfully', 'success')
+    return redirect(url_for('expense_list'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5020)
