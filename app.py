@@ -17,7 +17,6 @@ from expense_tracker import utils
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
-# app.jinja_env.filters['sort_expenses'] = utils.sort_by_transaction_date
 
 def requires_signin(func):
     @wraps(func)
@@ -147,6 +146,7 @@ def analytics_view(user_id):
             groups_data = g.storage.get_grouped_data(user_id, grouping_option, date_from, date_to)
             for group in groups_data:
                 group['group_value'] = group['group_value'].strftime('%Y-%m-%d')
+                # TODO probably need to do this formatting in a 'currency' filter and use that filter in the templates instead of view function.
                 group['total_amount'] = f'{(group['total_amount'] / 100):.2f}'
                 group['avg_amount'] = f'{(group['avg_amount'] / 100):.2f}'
 
@@ -154,7 +154,6 @@ def analytics_view(user_id):
         else:
             flash('You must select a grouping option', 'error')
             return render_template('analytics.html')
-
 
     return render_template('analytics.html')
 
