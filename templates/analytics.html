@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<header>
+    <h1>Expense Analytics</h1>
+</header>
+<main>
+    <section>
+        <h2>Select your filters</h2>
+        <form method="GET" action="{{ url_for('analytics_view') }}">
+            <div class="analytics-input">
+                <label>Group by</label>
+                <select name="grouping_option" required>
+                    <option value="month" {% if request.args.get('grouping_option') == 'month' %}selected{% endif %}>Month</option>
+                    <option value="week" {% if request.args.get('grouping_option') == 'week' %}selected{% endif %}>Week</option>
+                    <option value="day" {% if request.args.get('grouping_option') == 'day' %}selected{% endif %}>Day</option>
+                </select>
+                <i>(required)</i>
+            </div>
+            <div class="analytics-input">
+                <label for="analytics-date-from">Date from</label>
+                <input type="date" id="analytics-date-from" name="date_from"
+                value="{{ request.args.get('date_from', '')}}">
+                <label for="analytics-date-to">Date to</label>
+                <input type="date" id="analytics-date-to" name="date_to"
+                value="{{ request.args.get('date_to', '')}}">
+            </div>
+
+            <button type="submit">View</button>
+        </form>
+    </section>
+    <section>
+        {% if groups_data %}
+            <h2>Results</h2>
+            <table class="groups-table">
+                <thead>
+                    <td>Group</td>
+                    <td>Number of Transactions</td>
+                    <td>Total Amount(USD)</td>
+                    <td>Average Amount(USD)</td>
+                </thead>
+                {% for group in groups_data %}
+                <tr>
+                    <td>{{ group.group_value }}</td>
+                    <td>{{ group.txn_count }}</td>
+                    <td>${{ group.total_amount }}</td>
+                    <td>${{ group.avg_amount }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+        <p>Select filters and click 'View' to see Analytics data</p>
+        {% endif %}
+    </section>
+    <a href="{{ url_for('index') }}"> Back to List</a>
+</main>
+{% endblock %}

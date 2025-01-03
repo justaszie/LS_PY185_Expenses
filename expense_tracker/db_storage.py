@@ -27,7 +27,7 @@ class ExpensesDatabaseStorage:
         self.connection = psycopg2.connect(dbname=db_name)
 
     @db_transaction(DictCursor)
-    def all_user_expenses(self, cursor, user_id):
+    def get_all_user_expenses(self, cursor, user_id):
         query = (
             """
             SELECT e.*, c.name as category_name
@@ -35,6 +35,7 @@ class ExpensesDatabaseStorage:
             LEFT JOIN categories c ON e.category_id = c.id
             JOIN users u ON u.id = e.user_id
             WHERE u.id = %s
+            ORDER BY e.transaction_datetime DESC
             """
         )
         cursor.execute(query, (user_id, ))
@@ -162,3 +163,34 @@ class ExpensesDatabaseStorage:
         params = (user_id, expense_id, )
         cursor.execute(query, params)
         return
+
+    @db_transaction(DictCursor)
+    def get_grouped_data(self, cursor, user_id, group_option, date_from=None, date_to=None):
+        if group_option.lower() in ('month', 'day', 'week'):
+            query = """
+                    SELECT DATE_TRUNC(%s, transaction_datetime) as group_value,
+                            COUNT(id) as txn_count,
+                            SUM(amount_cents_usd) as total_amount,
+                            ROUND(AVG(amount_cents_usd),2) as avg_amount
+                            FROM expenses
+                            WHERE user_id = %s
+                    """
+
+            params = [group_option.lower(), user_id, ]
+
+            if date_from:
+                    query += '\n AND transaction_datetime >= %s'
+                    date_from = datetime.strptime(date_from, '%Y-%m-%d')
+                    params.append(date_from)
+            if date_to:
+                    date_to = datetime.strptime(date_to + 'T23:59:59', '%Y-%m-%dT%H:%M:%S')
+                    query += '\n AND transaction_datetime <= %s'
+                    params.append(date_to)
+
+            query += '\n GROUP BY 1 ORDER BY 1 DESC'
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            results = [dict(row) for row in rows]
+            return results

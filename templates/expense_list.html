@@ -6,9 +6,8 @@
 </header>
 <main>
 <section>
-<!-- TODO: Add Expemse / Analytics CTAs -->
     <a class="cta" href="{{ url_for('new_expense_view') }}">&nbsp;&plus; Add Expense</a>
-    <a class="cta" href="#">Analytics</a>
+    <a class="cta" href="{{ url_for('analytics_view') }}">Analytics</a>
 </section>
 <section>
 {% if not expenses %}
@@ -25,10 +24,10 @@
             </tr>
         </thead>
         <tbody>
-            {% for expense in expenses | sort_expenses %}
+            {% for expense in expenses %}
                 <tr class="row">
-                    <td>{{ expense.transaction_datetime.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ "$%.2f"|format(expense.amount_usd) }}</td>
+                    <td>{{ expense.transaction_datetime }}</td>
+                    <td>${{ "%.2f"|format(expense.amount_usd) }}</td>
                     <td>{{ expense.description }}</td>
                     <td>{{ expense.category_name if expense.category_name else '' }}</td>
                     <td>

@@ -1,4 +1,4 @@
-.expense-table{
+.expense-table, .groups-table{
     border: 1px solid black;
 }
 
@@ -28,5 +28,9 @@ section{
 }
 
 .expense-input{
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.analytics-input{
+    margin-bottom: 10px;
 }

@@ -110,5 +110,5 @@ def expense_data_errors(expense_data):
 
     return errors
 
-def sort_by_transaction_date(expenses):
-    return sorted(expenses, key=lambda x: x.get('transaction_datetime'), reverse=True)
+# def sort_by_transaction_date(expenses):
+#     return sorted(expenses, key=lambda x: x.get('transaction_datetime'), reverse=True)

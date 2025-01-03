@@ -17,7 +17,7 @@ from expense_tracker import utils
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
-app.jinja_env.filters['sort_expenses'] = utils.sort_by_transaction_date
+# app.jinja_env.filters['sort_expenses'] = utils.sort_by_transaction_date
 
 def requires_signin(func):
     @wraps(func)
@@ -53,10 +53,11 @@ def index():
 @app.route('/expenses')
 @requires_signin
 def expense_list(user_id):
-    expenses = g.storage.all_user_expenses(user_id)
+    expenses = g.storage.get_all_user_expenses(user_id)
 
     for expense in expenses:
         expense['amount_usd'] = expense.pop('amount_cents_usd') / 100
+        expense['transaction_datetime'] = expense['transaction_datetime'].strftime('%Y-%m-%d %H:%M')
 
     return render_template('expense_list.html', expenses=expenses)
 
@@ -131,6 +132,30 @@ def delete_expense(user_id, expense_id):
     g.storage.delete_expense_by_id(user_id, expense_id)
     flash('Expense deleted successfully', 'success')
     return redirect(url_for('expense_list'))
+
+@app.route('/analytics', methods=['GET'])
+@requires_signin
+def analytics_view(user_id):
+    if request.args:
+        if request.args.get('grouping_option'):
+            print(request.args)
+            grouping_option = request.args.get('grouping_option')
+            date_from = request.args.get('date_from')
+            date_to = request.args.get('date_to')
+
+            groups_data = g.storage.get_grouped_data(user_id, grouping_option, date_from, date_to)
+            for group in groups_data:
+                group['group_value'] = group['group_value'].strftime('%Y-%m-%d')
+                group['total_amount'] = f'{(group['total_amount'] / 100):.2f}'
+                group['avg_amount'] = f'{(group['avg_amount'] / 100):.2f}'
+
+            return render_template('analytics.html', groups_data=groups_data)
+        else:
+            flash('You must select a grouping option', 'error')
+            return render_template('analytics.html')
+
+
+    return render_template('analytics.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5020)
