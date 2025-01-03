@@ -22,11 +22,16 @@ app.secret_key = token_hex(32)
 def requires_signin(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        user_name = session.get('user_name')
+        user_name = session.get('username')
         if not user_name:
-            abort(401, description='You must be signed in')
+            flash('You must be signed in')
+            return redirect(url_for('sign_in'))
 
-        user_id = g.storage.get_current_user_id(user_name)
+        user_id = g.storage.find_user_by_username(user_name)
+        if not user_id:
+            flash('You must be signed in')
+            return redirect(url_for('sign_in'))
+
         return func(user_id, *args, **kwargs)
     return wrapper
 
@@ -34,11 +39,6 @@ def requires_signin(func):
 def create_db_connection():
     if not hasattr(g, 'storage'):
         g.storage = ExpensesDatabaseStorage()
-
-# TODO - Implement properly when working on auth
-@app.before_request
-def initialize_session():
-    session['user_name'] = 'admin'
 
 @app.teardown_appcontext
 def teardown_db(exception=None):
@@ -62,7 +62,8 @@ def expense_list(user_id):
     return render_template('expense_list.html', expenses=expenses)
 
 @app.route('/expenses/new')
-def new_expense_view():
+@requires_signin
+def new_expense_view(user_id):
     categories = g.storage.get_categories()
     return render_template('add_expense.html', categories=categories, current_date=date.today())
 
@@ -156,6 +157,50 @@ def analytics_view(user_id):
 
 
     return render_template('analytics.html')
+
+@app.route('/sign_up', methods=['GET', 'POST'])
+def sign_up():
+    if request.method == 'GET':
+        return render_template('sign_up.html')
+    else:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        errors = utils.sign_up_credentials_errors(username, password)
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template('sign_up.html')
+
+        password_hash = utils.get_hashed_password()
+        g.storage.create_new_user(username, password_hash)
+        flash('Signed up successfully. You can sign in now.')
+        return redirect(url_for('sign_in'))
+
+
+@app.route('/sign_in', methods=['GET', 'POST'])
+def sign_in():
+    if request.method == 'GET':
+        return render_template('sign_in.html')
+    else:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if utils.valid_credentials(username, password):
+            session['username'] = username
+            session.modified = True
+            flash('Signed in successfully.')
+            return redirect(url_for('index'))
+        else:
+            flash('Wrong credentials', 'error')
+            return render_template('sign_in.html')
+
+@app.route('/sign_out', methods=['GET'])
+def sign_out():
+    user = session.pop('username', None)
+    session.modified = True
+    if user:
+        flash('You were signed out successfully. Bye!')
+    return redirect(url_for('sign_in'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5020)

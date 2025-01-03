@@ -27,10 +27,7 @@ section{
     margin-top:10px;
 }
 
-.expense-input{
+.expense-input, .analytics-input, .credentials-input {
     margin-bottom: 10px;
 }
 
-.analytics-input{
-    margin-bottom: 10px;
-}

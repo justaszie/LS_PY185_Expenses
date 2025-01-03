@@ -1,6 +1,9 @@
 
 from datetime import datetime
 from expense_tracker.db_storage import ExpensesDatabaseStorage
+from flask import g
+import re
+import bcrypt
 
 def extract_expense_data(form_data):
     # Define a list of attribute names
@@ -77,8 +80,7 @@ def errors_for_expense_category(category_id_str):
         except ValueError:
             return ['Category value is not supported. Make sure you selected a value from the list']
 
-        db = ExpensesDatabaseStorage()
-        categories = [cat['id'] for cat in db.get_categories()]
+        categories = [cat['id'] for cat in g.storage.get_categories()]
         if category_id not in categories:
             return ['Category value is not supported. Make sure you selected a value from the list']
 
@@ -112,3 +114,55 @@ def expense_data_errors(expense_data):
 
 # def sort_by_transaction_date(expenses):
 #     return sorted(expenses, key=lambda x: x.get('transaction_datetime'), reverse=True)
+
+def errors_for_username(username):
+    errors = []
+    if not username:
+        return ['Username is required.']
+
+    if g.storage.username_exists(username):
+        errors.append('Username already exists. Try a different one.')
+
+    if not 3 <= len(username) <= 20:
+        errors.append('Username must be between 3 and 20 characters')
+
+    return errors
+
+def errors_for_password(password):
+    errors = []
+    if not password:
+        return ['Password is required.']
+
+    pwd_pattern = r'([a-z]+.*[A-Z]+.*|[A-Z]+.*[a-z]+.*)'
+    match = re.search(pwd_pattern, password)
+    if not match:
+        errors.append('Password must contain at least 1 uppercase letter and 1 lowercase letter')
+
+    if len(password) < 5:
+        errors.append('Password must be at least 5 characters')
+
+    return errors
+
+def sign_up_credentials_errors(username, password):
+    errors = []
+    errors.extend(errors_for_username(username))
+    errors.extend(errors_for_password(password))
+
+    return errors
+
+def get_hashed_password(password):
+    salt = bcrypt.gensalt()
+    password_bytes = password.encode('utf-8')
+    password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+    return password_hash
+
+def valid_credentials(username, password):
+    user_id = g.storage.find_user_by_username(username)
+    if not user_id:
+        return False
+
+    stored_credentials = g.storage.get_user_credentials(user_id)
+    stored_password = stored_credentials['user_password'].encode('utf-8')
+    entered_password = password.encode('utf-8')
+
+    return bcrypt.checkpw(entered_password, stored_password)

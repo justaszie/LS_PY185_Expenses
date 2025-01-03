@@ -64,7 +64,7 @@ class ExpensesDatabaseStorage:
         return dict(result) if result else None
 
     @db_transaction()
-    def get_current_user_id(self, cursor, user_name):
+    def find_user_by_username(self, cursor, user_name):
         query = (
             """
             SELECT id
@@ -111,7 +111,7 @@ class ExpensesDatabaseStorage:
             user_id, category_id)
             VALUES
             (%s, %s, %s, %s, %s)
-            RETURNING ID
+            RETURNING id
             """
         )
         params = (transaction_datetime, amount_cents, description,
@@ -194,3 +194,39 @@ class ExpensesDatabaseStorage:
 
             results = [dict(row) for row in rows]
             return results
+
+    @db_transaction()
+    def username_exists(self, cursor, username):
+        query = """
+                SELECT user_name
+                FROM users
+                WHERE LOWER(user_name) = %s
+                """
+        params = (username.lower(), )
+        cursor.execute(query, params)
+        return (cursor.fetchone() is not None)
+
+    @db_transaction()
+    def create_new_user(self, cursor, username, password_hash):
+        query = """
+                INSERT INTO users (user_name, user_password)
+                VALUES (%s, %s)
+                RETURNING id
+                """
+        params = (username, password_hash)
+        cursor.execute(query, params)
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+    @db_transaction(DictCursor)
+    def get_user_credentials(self, cursor, user_id):
+        query = """
+                SELECT user_name, user_password
+                FROM users
+                WHERE id = %s
+                """
+        params = (user_id, )
+        cursor.execute(query, params)
+
+        result = cursor.fetchone()
+        return result

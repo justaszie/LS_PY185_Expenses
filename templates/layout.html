@@ -16,10 +16,16 @@
             </header>
         {% endif %}
     {% endwith %}
-
     <main>
         {% block content %}
         {% endblock %}
     </main>
+    <footer>
+        {% if session.username %}
+            <p>
+                <i>Signed in as {{ session.username }}. Not you? </i> <a clas="cta" href="{{ url_for('sign_out') }}">Sign Out</a>
+            </p>
+        {% endif %}
+    </footer>
 </body>
 </html>
