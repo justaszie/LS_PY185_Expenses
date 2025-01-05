@@ -14,6 +14,7 @@
                     <option value="month" {% if request.args.get('grouping_option') == 'month' %}selected{% endif %}>Month</option>
                     <option value="week" {% if request.args.get('grouping_option') == 'week' %}selected{% endif %}>Week</option>
                     <option value="day" {% if request.args.get('grouping_option') == 'day' %}selected{% endif %}>Day</option>
+                    <option value="category" {% if request.args.get('grouping_option') == 'category' %}selected{% endif %}>Category</option>
                 </select>
                 <i>(required)</i>
             </div>
@@ -34,17 +35,17 @@
             <h2>Results</h2>
             <table class="groups-table">
                 <thead>
-                    <td>Group</td>
-                    <td>Number of Transactions</td>
-                    <td>Total Amount(USD)</td>
-                    <td>Average Amount(USD)</td>
+                    <th>Group</th>
+                    <th>Number of Transactions</th>
+                    <th>Total Amount(USD)</th>
+                    <th>Average Amount(USD)</th>
                 </thead>
                 {% for group in groups_data %}
                 <tr>
-                    <td>{{ group.group_value }}</td>
+                    <th>{{ group.group_value }}</td>
                     <td>{{ group.txn_count }}</td>
-                    <td>${{ group.total_amount }}</td>
-                    <td>${{ group.avg_amount }}</td>
+                    <td>${{ group.total_amount | to_currency }}</td>
+                    <td>${{ group.avg_amount | to_currency }}</td>
                 </tr>
                 {% endfor %}
             </table>

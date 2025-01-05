@@ -187,24 +187,53 @@ class ExpensesDatabaseStorage:
                     query += '\n AND transaction_datetime <= %s'
                     params.append(date_to)
 
-            query += '\n GROUP BY 1 ORDER BY 1 DESC'
+            query += '\n GROUP BY 1 ORDER BY 1 ASC'
 
+
+        elif group_option.lower() == 'category':
+            query = """
+                    SELECT c.name as group_value,
+                            COUNT(e.id) as txn_count,
+                            SUM(amount_cents_usd) as total_amount,
+                            ROUND(AVG(amount_cents_usd),2) as avg_amount
+                            FROM expenses e
+                                JOIN categories c ON e.category_id = c.id
+                            WHERE user_id = %s
+                    """
+
+            params = [user_id, ]
+
+            if date_from:
+                    query += '\n AND transaction_datetime >= %s'
+                    date_from = datetime.strptime(date_from, '%Y-%m-%d')
+                    params.append(date_from)
+            if date_to:
+                    date_to = datetime.strptime(date_to + 'T23:59:59', '%Y-%m-%dT%H:%M:%S')
+                    query += '\n AND transaction_datetime <= %s'
+                    params.append(date_to)
+
+            query += '\n GROUP BY c.name ORDER BY 1 ASC'
+
+        if query and params:
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
             results = [dict(row) for row in rows]
             return results
+        else:
+            return None
 
     @db_transaction()
-    def username_exists(self, cursor, username):
+    def get_user_id(self, cursor, username):
         query = """
-                SELECT user_name
+                SELECT id
                 FROM users
                 WHERE LOWER(user_name) = %s
                 """
         params = (username.lower(), )
         cursor.execute(query, params)
-        return (cursor.fetchone() is not None)
+        result = cursor.fetchone()
+        return result[0] if result else None
 
     @db_transaction()
     def create_new_user(self, cursor, username, password_hash):

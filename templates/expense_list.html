@@ -27,7 +27,7 @@
             {% for expense in expenses %}
                 <tr class="row">
                     <td>{{ expense.transaction_datetime }}</td>
-                    <td>${{ "%.2f"|format(expense.amount_usd) }}</td>
+                    <td>${{ expense.amount_usd | to_currency }}</td>
                     <td>{{ expense.description }}</td>
                     <td>{{ expense.category_name if expense.category_name else '' }}</td>
                     <td>

@@ -117,7 +117,7 @@ def errors_for_username(username):
     if not username:
         return ['Username is required.']
 
-    if g.storage.username_exists(username):
+    if g.storage.get_user_id(username):
         errors.append('Username already exists. Try a different one.')
 
     if not 3 <= len(username) <= 20:
@@ -163,3 +163,6 @@ def valid_credentials(username, password):
     entered_password = password.encode('utf-8')
 
     return bcrypt.checkpw(entered_password, stored_password)
+
+def to_currency(amount):
+    return f'{amount:.2f}'

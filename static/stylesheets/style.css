@@ -1,10 +1,14 @@
 .expense-table, .groups-table{
-    border: 1px solid black;
+    border-collapse: collapse;
 }
 
 th, td {
-    border: 0.5px solid gray;
+    border: 1px solid gray;
     padding: 5px 10px;
+}
+
+thead {
+    background-color: lightgray;
 }
 
 .cta{

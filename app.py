@@ -18,21 +18,31 @@ from expense_tracker import utils
 app = Flask(__name__)
 app.secret_key = token_hex(32)
 
+app.jinja_env.filters['to_currency'] = utils.to_currency
+
 def requires_signin(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        user_name = session.get('username')
-        if not user_name:
+        user = session.get('user_signed_in')
+        if not user:
             flash('You must be signed in')
             return redirect(url_for('sign_in'))
 
-        user_id = g.storage.find_user_by_username(user_name)
-        if not user_id:
-            flash('You must be signed in')
-            return redirect(url_for('sign_in'))
-
-        return func(user_id, *args, **kwargs)
+        return func(user['user_id'], *args, **kwargs)
     return wrapper
+
+def load_expense(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = session.get('user_signed_in')
+        expense_id = kwargs.get('expense_id')
+        expense = g.storage.find_expense_by_id(user['user_id'], expense_id)
+        if not expense:
+            abort(404, description='Expense record not found')
+
+        return func(expense, *args, **kwargs)
+    return wrapper
+
 
 @app.before_request
 def create_db_connection():
@@ -91,13 +101,14 @@ def create_expense(user_id):
 
 @app.route('/expenses/<int:expense_id>/edit', methods=['GET'])
 @requires_signin
-def edit_expense_view(user_id, expense_id):
+@load_expense
+def edit_expense_view(expense, user_id, expense_id):
     categories = g.storage.get_categories()
 
-    # TODO - move this to a decorator later
-    expense = g.storage.find_expense_by_id(user_id, expense_id)
-    if not expense:
-        abort(404, description='Expense not found')
+    # # TODO - move this to a decorator later
+    # expense = g.storage.find_expense_by_id(user_id, expense_id)
+    # if not expense:
+    #     abort(404, description='Expense not found')
 
     expense['transaction_date'] = expense['transaction_datetime'].strftime('%Y-%m-%d')
     expense['transaction_time'] = expense['transaction_datetime'].strftime('%H:%M')
@@ -106,7 +117,8 @@ def edit_expense_view(user_id, expense_id):
 
 @app.route('/expenses/<int:expense_id>/edit', methods=['POST'])
 @requires_signin
-def edit_expense(user_id, expense_id):
+@load_expense
+def edit_expense(expense, user_id, expense_id):
     expense_data = utils.extract_expense_data(request.form)
 
     errors = utils.expense_data_errors(expense_data)
@@ -128,7 +140,8 @@ def edit_expense(user_id, expense_id):
 
 @app.route('/expenses/<int:expense_id>/delete', methods=['POST'])
 @requires_signin
-def delete_expense(user_id, expense_id):
+@load_expense
+def delete_expense(expense, user_id, expense_id):
     g.storage.delete_expense_by_id(user_id, expense_id)
     flash('Expense deleted successfully', 'success')
     return redirect(url_for('expense_list'))
@@ -144,11 +157,12 @@ def analytics_view(user_id):
             date_to = request.args.get('date_to')
 
             groups_data = g.storage.get_grouped_data(user_id, grouping_option, date_from, date_to)
+            # Processing analytics results to the right format for the template
             for group in groups_data:
-                group['group_value'] = group['group_value'].strftime('%Y-%m-%d')
-                # TODO probably need to do this formatting in a 'currency' filter and use that filter in the templates instead of view function.
-                group['total_amount'] = f'{(group['total_amount'] / 100):.2f}'
-                group['avg_amount'] = f'{(group['avg_amount'] / 100):.2f}'
+                if grouping_option in ('week','month','day'):
+                    group['group_value'] = group['group_value'].strftime('%Y-%m-%d')
+                group['total_amount'] /= 100
+                group['avg_amount'] /= 100
 
             return render_template('analytics.html', groups_data=groups_data)
         else:
@@ -185,7 +199,11 @@ def sign_in():
         password = request.form.get('password', '').strip()
 
         if utils.valid_credentials(username, password):
-            session['username'] = username
+            user_id = g.storage.get_user_id(username)
+            session['user_signed_in'] = {
+                'username':username,
+                'user_id': user_id
+            }
             session.modified = True
             flash('Signed in successfully.')
             return redirect(url_for('index'))
@@ -195,7 +213,7 @@ def sign_in():
 
 @app.route('/sign_out', methods=['GET'])
 def sign_out():
-    user = session.pop('username', None)
+    user = session.pop('user_signed_in', None)
     session.modified = True
     if user:
         flash('You were signed out successfully. Bye!')

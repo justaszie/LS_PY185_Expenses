@@ -21,9 +21,9 @@
         {% endblock %}
     </main>
     <footer>
-        {% if session.username %}
+        {% if session.user_signed_in %}
             <p>
-                <i>Signed in as {{ session.username }}. Not you? </i> <a clas="cta" href="{{ url_for('sign_out') }}">Sign Out</a>
+                <i>Signed in as {{ session.user_signed_in.username }}. Not you? </i> <a clas="cta" href="{{ url_for('sign_out') }}">Sign Out</a>
             </p>
         {% endif %}
     </footer>
